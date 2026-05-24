@@ -100,7 +100,30 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
     db.commit()
     db.refresh(user_info)
 
-    # 9. Susun response
+    # 9. Jalankan agent_messaging untuk memberi pesan motivasi personal terkait BMI
+    suggest = None
+    try:
+        from app.agents.agent_supervisor import run_supervisor
+        supervisor_result = run_supervisor(
+            nama=payload.nama,
+            berat_badan=payload.berat_badan,
+            tinggi_badan=payload.tinggi_badan
+        )
+        suggest = supervisor_result.get("personal_message", {})
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Gagal menjalankan agent_messaging saat registrasi: {e}", exc_info=True)
+        suggest = {
+            "greeting": f"Halo {payload.nama}!",
+            "bmi_explanation": f"BMI Anda adalah {bmi} ({bmi_kategori}).",
+            "health_status": "Analisis personal AI saat ini sedang tidak tersedia secara real-time.",
+            "recommendations": ["Jaga pola makan sehat dan olahraga teratur secara rutin."],
+            "motivation": "Semangat untuk memulai perjalanan hidup sehat Anda!",
+            "next_steps": "Gunakan aplikasi Healthy AI untuk melacak berat badan dan makanan harian Anda."
+        }
+
+    # 10. Susun response
     return RegisterResponse(
         message="Registrasi berhasil",
         username=account_user.username,
@@ -116,4 +139,5 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
             type_desserts=[d.name for d in user_info.type_desserts],
             alergen_foods=[a.name for a in user_info.alergen_foods],
         ),
+        suggest=suggest,
     )

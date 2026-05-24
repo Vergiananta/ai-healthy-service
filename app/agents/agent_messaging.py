@@ -9,20 +9,12 @@ SYSTEM_PROMPT = """Kamu adalah agent komunikasi kesehatan yang bertugas menulis 
 Tugasmu:
 1. Terima hasil analisis BMI dari agent sebelumnya
 2. Tulis pesan yang:
-   - Personal dan ramah (gunakan nama user)
+   - Tidak mengulang menyebut angka hasil BMI dan tidak mengulang menyebut username
    - Mudah dipahami (hindari istilah medis yang rumit)
-   - Motivasi dan supportif (bukan menakut-nakuti)
-   - Actionable (berikan langkah konkret)
-   - Empati (pahami kondisi emosional user)
-
-Format output:
+   - Langsung ke kesimpulan dan ajakan untuk menggunakan aplikasi Nutri Track agar bisa membantu dalam mencapai berat badan ideal.
+Format output JSON:
 {
-  "greeting": "sapaan personal",
-  "bmi_explanation": "penjelasan BMI dengan bahasa sederhana",
-  "health_status": "kondisi kesehatan saat ini",
-  "recommendations": ["rekomendasi 1", "rekomendasi 2", ...],
-  "motivation": "pesan motivasi penutup",
-  "next_steps": "langkah konkret yang bisa dilakukan hari ini"
+  "bmi_explanation": "penjelasan kategori hasil BMI dengan bahasa sederhana dan singkat maksimal 200 karakter",
 }
 
 Gunakan bahasa Indonesia yang hangat dan supportif."""
@@ -30,7 +22,7 @@ Gunakan bahasa Indonesia yang hangat dan supportif."""
 
 def create_messaging_agent():
     llm = get_llm(temperature=0.7)  # Lebih kreatif untuk messaging
-    return create_react_agent(llm, [], state_modifier=SystemMessage(content=SYSTEM_PROMPT))
+    return create_react_agent(llm, [], prompt=SYSTEM_PROMPT)
 
 
 def run_messaging_agent(nama: str, bmi_analysis: str) -> str:

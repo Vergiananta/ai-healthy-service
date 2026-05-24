@@ -3,6 +3,7 @@ import httpx
 import requests 
 import os 
 from dotenv import load_dotenv
+load_dotenv()
 import json
 import datetime
 from decimal import Decimal
@@ -125,25 +126,26 @@ def create_log_llm(
 # ── LLM Connection Class ──────────────────────────────────────────────────────
 
 class LlmConnection:
-    openai_api_key: str = os.getenv("OPENAI_API_KEY")
+    openai_api_key: str = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+    openai_base_url: str = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     url: str = "https://openrouter.ai/api/v1/chat/completions"
 
     async def generate_openai_async(
-    self,
-    prompt: str = "",
-    user_prompt: str = "",
-    run_id: str = None,
-    agent_name: str = "",
-    data: str = "",
-    data_history: str = "",
-    model: str = "openai/gpt-4o-mini",  # contoh model OpenRouter
-    params: dict = {},
-    system_prompt: str = "",
-    json_schema=None,
-    temperature: float = 1.0
-) -> str:
+        self,
+        prompt: str = "",
+        user_prompt: str = "",
+        run_id: str = None,
+        agent_name: str = "",
+        data: str = "",
+        data_history: str = "",
+        model: str = "openai/gpt-4o-mini",  # contoh model OpenRouter
+        params: dict = {},
+        system_prompt: str = "",
+        json_schema=None,
+        temperature: float = 1.0
+    ) -> str:
         api_start = time.perf_counter()
-    # 1. Inisialisasi LLM via Bedrock (OpenAI-compatible)
+        # 1. Inisialisasi LLM via Bedrock (OpenAI-compatible)
         llm = ChatOpenAI(
             model=model,
             temperature=temperature,
@@ -184,89 +186,58 @@ class LlmConnection:
         try:
             response = await llm.ainvoke(messages)
 
+            # Ambil token usage
+            input_tokens = 0
+            output_tokens = 0
             if json_schema:
                 parsed = response["parsed"]
                 reply = json.dumps(parsed)
-                
-                raw_response = response["raw"]
-                usage = raw_response.response_metadata.get("token_usage", {})
-                input_tokens = raw_response.usage_metadata.get("input_tokens", 0)
-                output_tokens = raw_response.usage_metadata.get("output_tokens", 0)
+                raw_msg = response["raw"]
             else:
                 reply = response.content
-                usage = response.response_metadata.get("token_usage", {})
-                input_tokens = response.usage_metadata.get("input_tokens", 0)
-                output_tokens = response.usage_metadata.get("output_tokens", 0)
-                
-            api_duration = time.perf_counter() - api_start
+                raw_msg = response
+
+            if hasattr(raw_msg, "usage_metadata") and raw_msg.usage_metadata:
+                input_tokens = raw_msg.usage_metadata.get("input_tokens", 0)
+                output_tokens = raw_msg.usage_metadata.get("output_tokens", 0)
             
-            # 5. Async logging
-            asyncio.create_task(
-                self._async_db_logger(
-                    run_id=run_id,
-                    prompt=final_prompt,
-                    reply=reply,
-                    usage=usage,
-                    model=model,
-                    params=params
-                )
-            )
-            logging.info(f"Model: {model}")
+            # Fallback ke response_metadata jika usage_metadata kosong / tidak ada
+            if (not input_tokens or not output_tokens) and hasattr(raw_msg, "response_metadata") and raw_msg.response_metadata:
+                token_usage = raw_msg.response_metadata.get("token_usage", {})
+                if token_usage:
+                    input_tokens = token_usage.get("prompt_tokens", 0)
+                    output_tokens = token_usage.get("completion_tokens", 0)
+
+            # Hitung durasi dan catat log penggunaan LLM
+            duration_seconds = time.perf_counter() - api_start
+            total_tokens = input_tokens + output_tokens
+            
+            # Cari data model di master untuk mendapatkan pricing
             model_detail = get_detail_model_llm(model)
-            create_log_llm(usage.get("total_tokens", 0), api_duration, model_detail.get("id", None) if model_detail else None, input_tokens, output_tokens)
+            mst_model_llm_id = None
+            input_price = 0.0
+            output_price = 0.0
+            if model_detail:
+                mst_model_llm_id = model_detail["id"]
+                input_price = model_detail["input_price"]
+                output_price = model_detail["output_price"]
+
+            create_log_llm(
+                total_tokens=total_tokens,
+                duration_seconds=duration_seconds,
+                mst_model_llm_id=mst_model_llm_id,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                model_name=model,
+                agent_name=agent_name,
+                run_id=run_id,
+                module=params.get("module"),
+                input_price=input_price,
+                output_price=output_price,
+            )
 
             return reply
 
         except Exception as e:
             logging.error(f"Bedrock LangChain Error: {e}")
-            try:
-                loop = asyncio.get_running_loop()
-                await loop.run_in_executor(None, send_message_to_teams, str(e))
-            except Exception as teams_err:
-                logging.error(f"Failed to send to teams: {teams_err}")
-            return "Something went wrong"
-    
-    async def _async_db_logger(self, run_id, prompt, reply, usage, model, params):
-        """
-        Menangani logging database di background agar tidak memperlambat respons utama.
-        """
-        try:
-            # Menjalankan fungsi blocking (psycopg2) di thread terpisah
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, self._sync_db_insert, run_id, prompt, reply, usage, model, params)
-        except Exception as e:
-            logging.error(f"Background DB Logging Error: {e}")
-
-
-    def _sync_db_insert(self, run_id, prompt, reply, usage, model, params):
-        """
-        Fungsi internal untuk eksekusi query SQL (Synchronous).
-        """
-        mode = params.get("mode") 
-        trigger_service = params.get("trigger_service", None)
-        module = params.get("module", None)
-        
-        try:
-            with get_db_cursor(commit=True) as cursor:
-                # Insert ke tabel shorts jika mode short
-                if mode == "short":
-                    cursor.execute(
-                        """
-                        INSERT INTO public.shorts (uuid, name, prompt, result, template_id, height, width, module, trigger_service)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        """,
-                        (str(run_id), f"Project {run_id}", prompt, reply, 
-                        params.get("template"), params.get("height", 1024), params.get("width", 1024), module, trigger_service)
-                    )
-
-                # Log ke generate_ai
-                if trigger_service != 'product-service':
-                    cursor.execute(
-                        """ 
-                        INSERT INTO public.generate_ai (uuid, prompt, type, model, usage, module, trigger_service)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        """,
-                        (str(uuid.uuid4()), prompt, "text", model, json.dumps(usage), module, trigger_service)
-                    )
-        except Exception as e:
-            raise e
+            return "Something went wrong"    
