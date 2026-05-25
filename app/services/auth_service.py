@@ -92,6 +92,7 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
     initial_weight = WeightHistories(
         user_information_id=user_info.id,
         berat_badan=payload.berat_badan,
+        tinggi_badan=payload.tinggi_badan,
         bmi=bmi,
         bmi_kategori=bmi_kategori,
         catatan="Berat badan awal saat registrasi",

@@ -22,6 +22,7 @@ class WeightHistories(Base):
     )
 
     berat_badan = Column(Float, nullable=False, comment="Berat badan dalam kg")
+    tinggi_badan = Column(Float, nullable=False, comment="Tinggi badan dalam cm")
     bmi = Column(Float, nullable=True, comment="BMI saat pencatatan")
     bmi_kategori = Column(String(50), nullable=True, comment="Kategori BMI saat pencatatan")
     catatan = Column(String(255), nullable=True, comment="Catatan tambahan opsional")
