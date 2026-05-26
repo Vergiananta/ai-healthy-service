@@ -36,3 +36,14 @@ class CreateScheduleMenuRequest(BaseModel):
                     continue
             raise ValueError("Format tanggal harus DD-MM-YYYY atau YYYY-MM-DD")
         return v
+
+
+class MenuByDateItemResponse(BaseModel):
+    name: str
+    composition: str | None = None
+    calories: float | None = None
+    recorded_at: str
+
+
+class MenuByDateListResponse(BaseModel):
+    data: List[MenuByDateItemResponse]

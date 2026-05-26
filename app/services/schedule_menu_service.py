@@ -111,3 +111,42 @@ def create_schedule_menu_for_user(
         "schedule": schedule_data["schedule"],
         "foods": foods,
     }
+
+def find_menus_by_date(
+    db: Session,
+    current_user: AccountUser,
+    tanggal: str,
+) -> list[Dict]:
+    user_info = (
+        db.query(UserInformation)
+        .filter(UserInformation.account_user_id == current_user.id)
+        .first()
+    )
+    if not user_info:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User profile not found",
+        )
+
+    start_dt = datetime.combine(tanggal, time.min, tzinfo=JAKARTA_TZ)
+    end_dt = datetime.combine(tanggal, time.max, tzinfo=JAKARTA_TZ)
+
+    food_histories = (
+        db.query(FoodHistories)
+        .filter(
+            FoodHistories.user_information_id == user_info.id,
+            FoodHistories.recorded_at >= start_dt,
+            FoodHistories.recorded_at <= end_dt,
+        )
+        .all()
+    )
+
+    return [
+        {
+            "name": fh.name,
+            "composition": fh.composition,
+            "calories": fh.total_calories,
+            "recorded_at": fh.recorded_at.isoformat(),
+        }
+        for fh in food_histories
+    ]
