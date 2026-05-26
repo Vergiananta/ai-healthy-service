@@ -13,6 +13,7 @@ from app.agents.agent_schedule import run_schedule_agent
 from app.models.account_user import AccountUser
 from app.models.food_histories import FoodHistories
 from app.models.user_information import UserInformation
+from app.models.weight_histories import WeightHistories
 
 
 JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
@@ -84,6 +85,17 @@ def create_schedule_menu_for_user(
         allergen_food_names=[x.name for x in user_info.alergen_foods],
         total_daily_calories=calorie_data["total_daily_calories"],
         bmi_category=schedule_data["bmi_category"],
+    )
+
+    db.add(
+        WeightHistories(
+            user_information_id=user_info.id,
+            berat_badan=berat_badan,
+            tinggi_badan=tinggi_badan,
+            bmi=bmi,
+            bmi_kategori=schedule_data["bmi_category"],
+            catatan="Auto record from schedule-menu request",
+        )
     )
 
     for item in foods:

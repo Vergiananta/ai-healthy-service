@@ -41,6 +41,7 @@ def _generate_schedule_with_llm(
                 "Jumlah item 3 atau 4 slot makan.\n"
                 "Total calories seluruh item harus sama persis dengan total_daily_calories.\n"
                 "Gunakan konteks timezone Asia/Jakarta (WIB).\n"
+                "Hindari start jadwal makan di jam subuh.\n"
                 "Gunakan label makan natural seperti Breakfast/Lunch/Dinner/Snack.\n\n"
                 f"BMI Category: {bmi_category}\n"
                 f"Goal: {goal}\n"

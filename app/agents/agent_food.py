@@ -96,7 +96,7 @@ def _generate_food_suggestions_with_llm(
                 continue
 
             allowed_slots = {slot["time"]: slot for slot in schedule}
-            normalized: List[Dict] = []
+            normalized_by_slot: Dict[str, Dict] = {}
             for idx, item in enumerate(parsed):
                 if not isinstance(item, dict):
                     last_error = "item response bukan object"
@@ -111,22 +111,38 @@ def _generate_food_suggestions_with_llm(
                     slot = schedule[idx]
                     scheduled_at = slot["time"]
                 if not slot:
-                    last_error = "scheduled_at tidak cocok dengan slot jadwal"
-                    break
+                    continue
 
+                # Pastikan 1 menu per slot waktu; duplikat akan menimpa item sebelumnya.
+                normalized_by_slot[scheduled_at] = {
+                    "meal": str(item.get("meal", slot["label"])).strip() or slot["label"],
+                    "name": str(item.get("name", "")).strip() or "Menu sehat seimbang",
+                    "composition": str(item.get("composition", "")).strip() or "Protein, karbohidrat kompleks, sayur",
+                    "calories": slot["calories"],
+                    "scheduled_at": scheduled_at,
+                }
+
+            # Lengkapi slot yang tidak terisi agar jumlah item selalu sinkron dengan jadwal.
+            normalized: List[Dict] = []
+            for slot in schedule:
+                slot_time = slot["time"]
+                existing = normalized_by_slot.get(slot_time)
+                if existing:
+                    normalized.append(existing)
+                    continue
                 normalized.append(
                     {
-                        "meal": str(item.get("meal", slot["label"])).strip() or slot["label"],
-                        "name": str(item.get("name", "")).strip() or "Menu sehat seimbang",
-                        "composition": str(item.get("composition", "")).strip() or "Protein, karbohidrat kompleks, sayur",
+                        "meal": slot["label"],
+                        "name": f"Menu sehat {slot['label']}",
+                        "composition": "Protein, karbohidrat kompleks, sayur",
                         "calories": slot["calories"],
-                        "scheduled_at": scheduled_at,
+                        "scheduled_at": slot_time,
                     }
                 )
 
             if len(normalized) != len(schedule):
                 if not last_error:
-                    last_error = "jumlah item menu tidak sama dengan jumlah slot jadwal"
+                    last_error = "jumlah item menu tidak sama dengan jumlah slot jadwal setelah normalisasi"
                 continue
             return normalized
         except Exception as e:

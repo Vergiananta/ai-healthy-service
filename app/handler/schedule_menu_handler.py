@@ -18,7 +18,7 @@ router = APIRouter(prefix="/schedule-menu", tags=["Schedule Menu"])
 
 
 @router.post(
-    "/create-schedule-menu",
+    "",
     response_model=FoodPlanResponse,
     status_code=200,
     summary="Create meal schedule and menu by date",
