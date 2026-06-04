@@ -31,6 +31,10 @@ class FoodHistories(Base):
         server_default=func.now(),
         comment="Waktu pencatatan konsumsi makanan",
     )
-
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        comment="Waktu pembuatan record",
+    )
     # ManyToOne back-reference ke UserInformation
     user_information = relationship("UserInformation", back_populates="food_histories")
