@@ -1,8 +1,9 @@
 import os
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
-load_dotenv()
+from app.core import load_app_env
+
+load_app_env()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")

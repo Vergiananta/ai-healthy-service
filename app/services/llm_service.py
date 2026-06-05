@@ -2,8 +2,6 @@ import asyncio
 import httpx
 import requests 
 import os 
-from dotenv import load_dotenv
-load_dotenv()
 import json
 import datetime
 from decimal import Decimal
@@ -20,9 +18,12 @@ from langchain_openai import ChatOpenAI
 from langchain.schema import SystemMessage, HumanMessage
 from zoneinfo import ZoneInfo
 
+from app.core import load_app_env
 from app.database import SessionLocal
 from app.models.master import MstModelLlm
 from app.models.history_llm_usage import HistoryLlmUsage
+
+load_app_env()
 
 
 # ── Helper Functions ──────────────────────────────────────────────────────────

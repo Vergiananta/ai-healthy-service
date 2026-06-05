@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import os
-from dotenv import load_dotenv
 from jose import JWTError, jwt
 
-load_dotenv()
+from app.core import load_app_env
+
+load_app_env()
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-this-to-a-strong-random-secret")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")

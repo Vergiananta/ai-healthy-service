@@ -19,10 +19,9 @@ def _seed_type_food(db: Session):
     data = [
         MstTypeFood(name="Western", description="Masakan Barat seperti pasta, steak, burger"),
         MstTypeFood(name="Southeast Asia", description="Masakan Asia Tenggara seperti nasi goreng, rendang, pho"),
-        MstTypeFood(name="Middle East", description="Masakan Timur Tengah seperti kebab, hummus, shawarma"),
+        MstTypeFood(name="Middle East Asia", description="Masakan Timur Tengah seperti kebab, hummus, shawarma"),
         MstTypeFood(name="East Asia", description="Masakan Asia Timur seperti sushi, dim sum, ramen"),
         MstTypeFood(name="Latin America", description="Masakan Amerika Latin seperti tacos, empanada, ceviche"),
-        MstTypeFood(name="Lainnya", description="Tipe masakan lainnya"),
     ]
     db.add_all(data)
     db.commit()
@@ -60,7 +59,7 @@ def _seed_type_dessert(db: Session):
         MstTypeDessert(name="Cokelat", description="Cokelat batang, praline, truffle"),
         MstTypeDessert(name="Pudding", description="Pudding susu, jelly, panna cotta"),
         MstTypeDessert(name="Minuman Manis", description="Bubble tea, milkshake, smoothie"),
-        MstTypeDessert(name="Lainnya", description="Jenis dessert lainnya"),
+        MstTypeDessert(name="Semua suka", description="Suka semua jenis dessert"),
     ]
     db.add_all(data)
     db.commit()
