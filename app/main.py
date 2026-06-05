@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -38,6 +39,10 @@ from app.models import (  # noqa: F401
 from app.handler.auth_handler import router as auth_router
 from app.handler.master_handler import router as master_router
 from app.handler.bmi_handler import router as bmi_router
+from app.handler.food_handler import router as food_router
+from app.handler.schedule_menu_handler import router as schedule_menu_router
+from app.handler.profile_handler import router as profile_router
+from app.handler.weight_handler import router as weight_router
 from app.handler.master_llm_handler import router as master_llm_router
 from app.utils.seeder import seed_master_data
 from app.core.redis_client import test_redis_connection, REDIS_HOST, REDIS_PORT, REDIS_DB
@@ -80,7 +85,13 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ── Global Exception Handlers ─────────────────────────────────────────────────
 
@@ -143,6 +154,10 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(master_router, prefix="/api/v1")
 app.include_router(bmi_router, prefix="/api/v1")
+app.include_router(food_router, prefix="/api/v1")
+app.include_router(schedule_menu_router, prefix="/api/v1")
+app.include_router(profile_router, prefix="/api/v1")
+app.include_router(weight_router, prefix="/api/v1")
 app.include_router(master_llm_router, prefix="/api/v1")
 
 

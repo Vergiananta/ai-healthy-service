@@ -1,5 +1,5 @@
-from pydantic import BaseModel, field_validator
-from typing import List, Optional
+from pydantic import BaseModel, field_validator, field_serializer
+from typing import List, Optional, Dict, Any
 from datetime import date
 from uuid import UUID
 
@@ -21,6 +21,19 @@ class RegisterRequest(BaseModel):
     type_food_ids: List[UUID]       # ManyToMany: tipe makanan yang disukai
     type_dessert_ids: List[UUID]    # ManyToMany: tipe dessert yang disukai
     alergen_food_ids: List[UUID]    # ManyToMany: alergi makanan (bisa kosong)
+
+    @field_validator("tanggal_lahir", mode="before")
+    @classmethod
+    def parse_tanggal_lahir(cls, v):
+        if isinstance(v, str):
+            from datetime import datetime
+            for fmt in ("%d-%m-%Y", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(v, fmt).date()
+                except ValueError:
+                    continue
+            raise ValueError("Format tanggal_lahir harus DD-MM-YYYY atau YYYY-MM-DD")
+        return v
 
     @field_validator("username")
     @classmethod
@@ -63,6 +76,10 @@ class UserInfoResponse(BaseModel):
     type_desserts: List[str]
     alergen_foods: List[str]
 
+    @field_serializer("tanggal_lahir")
+    def serialize_tanggal_lahir(self, v: date) -> str:
+        return v.strftime("%d-%m-%Y")
+
     class Config:
         from_attributes = True
 
@@ -71,6 +88,7 @@ class RegisterResponse(BaseModel):
     message: str
     username: str
     user_information: UserInfoResponse
+    suggest: Optional[Dict[str, Any]] = None
 
 
 # ── Login ─────────────────────────────────────────────────────────────────────

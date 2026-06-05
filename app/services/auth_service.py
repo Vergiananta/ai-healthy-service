@@ -1,16 +1,19 @@
-from uuid import UUID
+from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
+from zoneinfo import ZoneInfo
 
 from app.models.account_user import AccountUser
 from app.models.user_information import UserInformation
 from app.models.weight_histories import WeightHistories
 from app.models.master import MstTypeFood, MstAlergenFood, MstTypeDessert
 from app.schemas.auth import RegisterRequest, RegisterResponse, UserInfoResponse
+from app.agents.agent_food import generate_registration_food_plan
 from app.services.bmi_service import calculate_bmi, get_bmi_kategori, calculate_berat_ideal
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
 
 
 def hash_password(password: str) -> str:
@@ -92,15 +95,48 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
     initial_weight = WeightHistories(
         user_information_id=user_info.id,
         berat_badan=payload.berat_badan,
+        tinggi_badan=payload.tinggi_badan,
         bmi=bmi,
         bmi_kategori=bmi_kategori,
         catatan="Berat badan awal saat registrasi",
     )
     db.add(initial_weight)
+
+    # 9. Generate food plan otomatis saat register:
+    # calorie agent -> schedule agent -> food agent (dengan preferensi/alergi user).
+    generate_registration_food_plan(
+        db=db,
+        user_info=user_info,
+        plan_date=datetime.now(JAKARTA_TZ).date(),
+    )
+
     db.commit()
     db.refresh(user_info)
 
-    # 9. Susun response
+    # 10. Jalankan agent_messaging untuk memberi pesan motivasi personal terkait BMI
+    suggest = None
+    try:
+        from app.agents.agent_supervisor import run_supervisor
+        supervisor_result = run_supervisor(
+            nama=payload.nama,
+            berat_badan=payload.berat_badan,
+            tinggi_badan=payload.tinggi_badan
+        )
+        suggest = supervisor_result.get("personal_message", {})
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Gagal menjalankan agent_messaging saat registrasi: {e}", exc_info=True)
+        suggest = {
+            "greeting": f"Halo {payload.nama}!",
+            "bmi_explanation": f"BMI Anda adalah {bmi} ({bmi_kategori}).",
+            "health_status": "Analisis personal AI saat ini sedang tidak tersedia secara real-time.",
+            "recommendations": ["Jaga pola makan sehat dan olahraga teratur secara rutin."],
+            "motivation": "Semangat untuk memulai perjalanan hidup sehat Anda!",
+            "next_steps": "Gunakan aplikasi Healthy AI untuk melacak berat badan dan makanan harian Anda."
+        }
+
+    # 11. Susun response
     return RegisterResponse(
         message="Registrasi berhasil",
         username=account_user.username,
@@ -116,4 +152,5 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
             type_desserts=[d.name for d in user_info.type_desserts],
             alergen_foods=[a.name for a in user_info.alergen_foods],
         ),
+        suggest=suggest,
     )

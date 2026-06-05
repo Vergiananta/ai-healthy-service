@@ -131,7 +131,7 @@ Jangan tambahkan teks di luar JSON tersebut."""
 def create_bmi_calculator_agent():
     llm = get_llm(temperature=0.1)
     tools = [tool_calculate_bmi, tool_get_health_risk]
-    return create_react_agent(llm, tools, state_modifier=SystemMessage(content=SYSTEM_PROMPT))
+    return create_react_agent(llm, tools, prompt=SYSTEM_PROMPT)
 
 
 def run_bmi_calculator_agent(nama: str, berat_badan: float, tinggi_badan: float) -> str:
