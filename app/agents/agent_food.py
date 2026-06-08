@@ -2,9 +2,9 @@ from datetime import date, datetime, time
 from typing import Dict, List, Optional, Sequence
 from uuid import UUID
 import json
-import logging
+from fastapi import HTTPException, status
 from zoneinfo import ZoneInfo
-
+import logging
 from app.agents.agent_calorie_calculator import run_calorie_calculator_agent
 from app.agents.agent_schedule import run_schedule_agent
 from app.core.llm import get_llm
@@ -176,6 +176,7 @@ def _build_food_plan_for_user(
 
     bmi = calculate_bmi(berat_badan, tinggi_badan)
 
+    #  Continue with existing flow ...
     calorie_data = run_calorie_calculator_agent(
         bmi=bmi,
         tinggi_badan=tinggi_badan,
@@ -191,7 +192,7 @@ def _build_food_plan_for_user(
         total_daily_calories=calorie_data["total_daily_calories"],
         bmi_category=schedule_data["bmi_category"],
     )
-
+    # ... rest unchanged ...
     for item in food_suggestions:
         scheduled_dt = datetime.combine(
             plan_date,

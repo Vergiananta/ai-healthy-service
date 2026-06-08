@@ -87,6 +87,7 @@ class UserInfoResponse(BaseModel):
 class RegisterResponse(BaseModel):
     message: str
     username: str
+    plan: str
     user_information: UserInfoResponse
     suggest: Optional[Dict[str, Any]] = None
 

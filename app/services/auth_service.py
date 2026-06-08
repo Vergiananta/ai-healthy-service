@@ -11,6 +11,7 @@ from app.models.master import MstTypeFood, MstAlergenFood, MstTypeDessert
 from app.schemas.auth import RegisterRequest, RegisterResponse, UserInfoResponse
 from app.agents.agent_food import generate_registration_food_plan
 from app.services.bmi_service import calculate_bmi, get_bmi_kategori, calculate_berat_ideal
+from app.models.llm_request import LLMRequest
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
@@ -70,6 +71,7 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
     account_user = AccountUser(
         username=payload.username,
         password_hash=hash_password(payload.password),
+        plan="BASIC",
     )
     db.add(account_user)
     db.flush()
@@ -136,10 +138,24 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
             "next_steps": "Gunakan aplikasi Healthy AI untuk melacak berat badan dan makanan harian Anda."
         }
 
+    # Catat penggunaan LLM saat registrasi secara keseluruhan untuk 1 kali hit API
+    try:
+        llm_req = LLMRequest(
+            account_user_id=account_user.id,
+            request_date=datetime.now(JAKARTA_TZ).date(),
+        )
+        db.add(llm_req)
+        db.commit()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Gagal mencatat LLMRequest saat registrasi: {e}", exc_info=True)
+
     # 11. Susun response
     return RegisterResponse(
         message="Registrasi berhasil",
         username=account_user.username,
+        plan="BASIC",
         user_information=UserInfoResponse(
             nama=user_info.nama,
             tanggal_lahir=user_info.tanggal_lahir,
