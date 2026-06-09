@@ -32,6 +32,7 @@ from app.models import (  # noqa: F401
     WeightHistories,
     FoodHistories,
     HistoryLlmUsage,
+    AppVersion,
     user_type_food,
     user_alergen_food,
     user_type_dessert,
@@ -44,6 +45,7 @@ from app.handler.schedule_menu_handler import router as schedule_menu_router
 from app.handler.profile_handler import router as profile_router
 from app.handler.weight_handler import router as weight_router
 from app.handler.master_llm_handler import router as master_llm_router
+from app.handler.version_handler import router as version_router
 from app.utils.seeder import seed_master_data
 from app.core.redis_client import test_redis_connection, REDIS_HOST, REDIS_PORT, REDIS_DB
 
@@ -159,6 +161,7 @@ app.include_router(schedule_menu_router, prefix="/api/v1")
 app.include_router(profile_router, prefix="/api/v1")
 app.include_router(weight_router, prefix="/api/v1")
 app.include_router(master_llm_router, prefix="/api/v1")
+app.include_router(version_router)
 
 
 @app.get("/", tags=["Health Check"])

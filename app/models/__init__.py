@@ -5,3 +5,4 @@ from app.models.associations import user_type_food, user_alergen_food, user_type
 from app.models.weight_histories import WeightHistories
 from app.models.food_histories import FoodHistories
 from app.models.history_llm_usage import HistoryLlmUsage
+from app.models.app_version import AppVersion
