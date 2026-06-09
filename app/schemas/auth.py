@@ -75,6 +75,7 @@ class UserInfoResponse(BaseModel):
     type_foods: List[str]
     type_desserts: List[str]
     alergen_foods: List[str]
+    plan: str
 
     @field_serializer("tanggal_lahir")
     def serialize_tanggal_lahir(self, v: date) -> str:

@@ -167,6 +167,7 @@ def register_user(db: Session, payload: RegisterRequest) -> RegisterResponse:
             type_foods=[f.name for f in user_info.type_foods],
             type_desserts=[d.name for d in user_info.type_desserts],
             alergen_foods=[a.name for a in user_info.alergen_foods],
+            plan=account_user.plan,
         ),
         suggest=suggest,
     )

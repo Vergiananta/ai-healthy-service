@@ -36,7 +36,7 @@ def login_user(db: Session, redis: redis_lib.Redis, payload: LoginRequest) -> Lo
         )
 
     # 2. Buat JWT token — user_id di-cast ke string karena UUID tidak JSON-serializable
-    token = create_access_token(data={"sub": account.username, "user_id": str(account.id)})
+    token = create_access_token(data={"sub": account.username, "user_id": str(account.id), "plan": str(account.plan)})
     ttl = get_token_ttl_seconds()
 
     # 3. Simpan token ke Redis dengan TTL 1 minggu
