@@ -7,7 +7,18 @@ from langgraph.graph.message import add_messages
 from app.core.llm import get_llm
 from app.agents.agent_bmi_calculator import run_bmi_calculator_agent
 from app.agents.agent_messaging import run_messaging_agent
-
+import logging
+import datetime
+from zoneinfo import ZoneInfo
+_JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+logging.Formatter.converter = staticmethod(
+    lambda secs: datetime.datetime.fromtimestamp(secs, _JAKARTA_TZ).timetuple()
+)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 # ── State ─────────────────────────────────────────────────────────────────────
 
@@ -88,7 +99,7 @@ def supervisor_node(state: SupervisorState) -> SupervisorState:
         else:
             decision = "FINISH"
 
-    print(f"[Supervisor] Iterasi {state.get('iteration', 0) + 1} → Routing ke: {decision}")
+    logging.info(f"[Supervisor] Iterasi {state.get('iteration', 0) + 1} → Routing ke: {decision}")
 
     return {
         **state,
@@ -102,7 +113,7 @@ def supervisor_node(state: SupervisorState) -> SupervisorState:
 
 def bmi_calculator_node(state: SupervisorState) -> SupervisorState:
     """Node yang menjalankan agent_bmi_calculator."""
-    print(f"[BMI Calculator] Menghitung BMI untuk {state['nama']}...")
+    logging.info(f"[BMI Calculator] Menghitung BMI untuk {state['nama']}...")
 
     result = run_bmi_calculator_agent(
         nama=state["nama"],
@@ -110,7 +121,7 @@ def bmi_calculator_node(state: SupervisorState) -> SupervisorState:
         tinggi_badan=state["tinggi_badan"],
     )
 
-    print(f"[BMI Calculator] Selesai.")
+    logging.info(f"[BMI Calculator] Selesai.")
     return {
         **state,
         "bmi_analysis": result,
@@ -120,14 +131,14 @@ def bmi_calculator_node(state: SupervisorState) -> SupervisorState:
 
 def messaging_node(state: SupervisorState) -> SupervisorState:
     """Node yang menjalankan agent_messaging."""
-    print(f"[Messaging] Membuat pesan personal untuk {state['nama']}...")
+    logging.info(f"[Messaging] Membuat pesan personal untuk {state['nama']}...")
 
     result = run_messaging_agent(
         nama=state["nama"],
         bmi_analysis=state["bmi_analysis"],
     )
 
-    print(f"[Messaging] Pesan selesai dibuat.")
+    logging.info(f"[Messaging] Pesan selesai dibuat.")
     return {
         **state,
         "personal_message": result,

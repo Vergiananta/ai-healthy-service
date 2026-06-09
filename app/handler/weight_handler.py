@@ -1,8 +1,8 @@
+from app.core.dependencies import require_basic_plan
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.core.dependencies import get_current_user
 from app.database import get_db
 from app.models.account_user import AccountUser
 from app.models.weight_histories import WeightHistories
@@ -17,7 +17,7 @@ class WeightHistoryListResponse(BaseModel):
     # Existing GET endpoint omitted for brevity
 
 @router.post("/record", response_model=WeightHistoryResponse, summary="Create weight/height record", description="Accepts height and weight, calculates BMI and category, stores the record for the authenticated user.")
-async def create_weight_record(payload: WeightHistoryRequest, current_user: AccountUser = Depends(get_current_user), db: Session = Depends(get_db)) -> WeightHistoryResponse:
+async def create_weight_record(payload: WeightHistoryRequest, current_user: AccountUser = Depends(require_basic_plan), db: Session = Depends(get_db)) -> WeightHistoryResponse:
     # Calculate BMI (height in cm -> meters)
     height_m = payload.tinggi_badan / 100.0
     bmi = round(payload.berat_badan / (height_m ** 2), 2) if height_m > 0 else None
@@ -56,7 +56,7 @@ async def create_weight_record(payload: WeightHistoryRequest, current_user: Acco
 
 # Existing GET endpoint
 @router.get("/histories", response_model=WeightHistoryListResponse, summary="Get all weight histories", description="Returns all recorded weight and height entries for the authenticated user, ordered by most recent.")
-async def get_weight_histories(current_user: AccountUser = Depends(get_current_user), db: Session = Depends(get_db)) -> WeightHistoryListResponse:
+async def get_weight_histories(current_user: AccountUser = Depends(require_basic_plan), db: Session = Depends(get_db)) -> WeightHistoryListResponse:
     histories = (
         db.query(WeightHistories)
         .join(WeightHistories.user_information)

@@ -1,3 +1,4 @@
+from app.core.dependencies import require_basic_plan
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/food", tags=["Food Planning"])
 )
 async def generate_food_plan(
     payload: FoodPlanRequest,
-    current_user: AccountUser = Depends(get_current_user),
+    current_user: AccountUser = Depends(require_basic_plan),
     db: Session = Depends(get_db),
 ) -> FoodPlanResponse:
     JAKARTA_TZ = ZoneInfo("Asia/Jakarta")

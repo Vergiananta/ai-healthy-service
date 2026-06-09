@@ -1,9 +1,9 @@
+from app.core.dependencies import require_basic_plan
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.core.dependencies import get_current_user
 from app.database import get_db
 from app.models.account_user import AccountUser
 from app.schemas.food import (
@@ -29,7 +29,7 @@ router = APIRouter(prefix="/schedule-menu", tags=["Schedule Menu"])
 )
 async def create_schedule_menu(
     payload: CreateScheduleMenuRequest,
-    current_user: AccountUser = Depends(get_current_user),
+    current_user: AccountUser = Depends(require_basic_plan),
     db: Session = Depends(get_db),
 ) -> FoodPlanResponse:
     try:
@@ -72,7 +72,7 @@ def _parse_tanggal_param(tanggal: str):
 @router.get("", response_model=MenuByDateListResponse, status_code=200)
 async def get_menus_by_date(
     tanggal: str,
-    current_user: AccountUser = Depends(get_current_user),
+    current_user: AccountUser = Depends(require_basic_plan),
     db: Session = Depends(get_db),
 ) -> MenuByDateListResponse:
     try:

@@ -1,3 +1,4 @@
+from app.core.dependencies import require_basic_plan
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -27,7 +28,7 @@ router = APIRouter(prefix="/bmi", tags=["BMI & Health Analysis"])
 )
 async def calculate_bmi(
     payload: BMICalculateRequest,
-    current_user: AccountUser = Depends(get_current_user),
+    _: AccountUser = Depends(require_basic_plan),
 ):
     try:
         result = run_supervisor(

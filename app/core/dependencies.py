@@ -55,3 +55,32 @@ def get_current_user(
         raise credentials_exception
 
     return account
+
+
+def require_basic_plan(
+    current_user: AccountUser = Depends(get_current_user)
+) -> AccountUser:
+    """
+    Dependency untuk memverifikasi apakah user memiliki plan BASIC atau PREMIUM.
+    """
+    if current_user.plan.upper() not in ["BASIC", "PREMIUM"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses ditolak. Akun tidak terdaftar.",
+        )
+    return current_user
+
+
+def require_premium_plan(
+    current_user: AccountUser = Depends(get_current_user)
+) -> AccountUser:
+    """
+    Dependency untuk memverifikasi apakah user memiliki plan PREMIUM.
+    """
+    if current_user.plan.upper() != "PREMIUM":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses ditolak. Fitur ini hanya tersedia untuk pengguna PREMIUM.",
+        )
+    return current_user
+

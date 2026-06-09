@@ -48,7 +48,18 @@ from app.handler.master_llm_handler import router as master_llm_router
 from app.handler.version_handler import router as version_router
 from app.utils.seeder import seed_master_data
 from app.core.redis_client import test_redis_connection, REDIS_HOST, REDIS_PORT, REDIS_DB
-
+import logging
+import datetime
+from zoneinfo import ZoneInfo
+_JAKARTA_TZ = ZoneInfo("Asia/Jakarta")
+logging.Formatter.converter = staticmethod(
+    lambda secs: datetime.datetime.fromtimestamp(secs, _JAKARTA_TZ).timetuple()
+)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 logger = logging.getLogger(__name__)
 
 
