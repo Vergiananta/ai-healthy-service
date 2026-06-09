@@ -34,6 +34,7 @@ def get_user_profile(db: Session, current_user_id: str) -> UserInfoResponse:
     # Build response data matching UserInfoResponse schema
     response_data = {
         "nama": user_info.nama,
+        "username": target_account.username,
         "tanggal_lahir": user_info.tanggal_lahir,
         "tinggi_badan": tinggi,
         "berat_badan": berat,
